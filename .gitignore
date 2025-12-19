@@ -1,0 +1,27 @@
+# Satisfactory Server Files (downloaded via SteamCMD)
+server/
+
+# SteamCMD
+steamcmd/
+steamcmd.zip
+
+# Save Games
+*.sav
+SaveGames/
+
+# Logs
+*.log
+Logs/
+
+# Config files with sensitive data (use templates instead)
+**/ServerSettings.ini
+passwords
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary files
+*.tmp
+*.temp

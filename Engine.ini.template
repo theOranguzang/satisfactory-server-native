@@ -1,0 +1,31 @@
+# Satisfactory Dedicated Server - Engine.ini Template
+# Copy this to: server/FactoryGame/Saved/Config/WindowsServer/Engine.ini
+# 
+# IMPORTANT: The timeout settings below fix the "stuck on connecting" issue
+# that occurs on first client connection.
+
+[/Script/Engine.Player]
+ConfiguredInternetSpeed=120000
+ConfiguredLanSpeed=130000
+
+[/Script/OnlineSubsystemUtils.IpNetDriver]
+MaxClientRate=120000
+MaxInternetClientRate=120000
+# CRITICAL: Increased timeouts for initial connection handshake
+InitialConnectTimeout=300.0
+ConnectionTimeout=300.0
+NetServerMaxTickRate=120
+
+[/Script/SteamSockets.SteamSocketsNetDriver]
+MaxClientRate=120000
+MaxInternetClientRate=120000
+# CRITICAL: Increased timeouts for initial connection handshake
+InitialConnectTimeout=300.0
+ConnectionTimeout=300.0
+
+[/Script/SocketSubsystemEOS.NetDriverEOSBase]
+MaxClientRate=120000
+MaxInternetClientRate=120000
+# CRITICAL: Increased timeouts for initial connection handshake
+InitialConnectTimeout=300.0
+ConnectionTimeout=300.0

@@ -1,0 +1,218 @@
+# Satisfactory Server - Chat History & Change Log
+
+This file maintains a comprehensive history of all changes, commands, configurations, and work done in this workspace.
+
+---
+
+## Session: December 19, 2025
+
+### Chat History Policy Established
+- **Issue**: Chat history was lost after restart (apparently a feature)
+- **Solution**: Maintain this `chat-history` file to document all workspace changes
+- **Requirements**:
+  - Extensive documentation of all changes made
+  - Include relevant code snippets
+  - Include all commands executed
+  - Include URLs and addresses used
+  - Can be summarized but must preserve important details
+
+### Current Workspace Structure
+- **Root**: e:\satisfactory-server-native
+- **Key Files**:
+  - `start-server.ps1` - Server startup script
+  - `migrate-config.ps1` - Configuration migration script
+  - `README.md` - Documentation
+- **Key Directories**:
+  - `server/` - Satisfactory dedicated server files
+  - `steamcmd/` - SteamCMD installation for server updates
+  - `chat-history` - This file
+
+---
+
+## Change Log
+
+### [2025-12-19] Initial Chat History Setup
+- Created chat-history file to track all workspace changes
+- Documented requirement to maintain comprehensive change log
+- Ready to track future modifications, commands, and configurations
+
+### [2025-12-19] Docker Deployment Issues - Switching to Native Installation
+**Problem with Docker Approach:**
+- Server was timing out during startup load sequence
+- **Root Cause**: Client handshake does not wait long enough for server to complete initialization on first connect
+- The initial server startup takes considerable time to load all resources
+- Client connection times out before server is ready to accept handshakes
+
+**Attempted Solutions (Failed):**
+- Tried various `Engine.ini` configuration file changes in Docker image
+- Attempted to adjust timeout settings
+- None of the configuration changes resolved the handshake timing issue
+
+**Resolution:**
+- Abandoned Docker deployment approach
+- **Current Approach**: Native Windows installation of Satisfactory dedicated server
+- Using SteamCMD for server installation and updates
+- Running directly on Windows to avoid Docker initialization overhead
+
+**Technical Context:**
+- Issue is specifically with **first connect** - subsequent connections may work
+- Problem is timing-based: server initialization vs. client handshake timeout
+- Docker container overhead may have exacerbated the timing issue
+
+### [2025-12-19] Server Installation and Initial Startup
+**Server Download Completed:**
+- Used SteamCMD to download Satisfactory Dedicated Server (App ID: 1690800)
+- Installation path: `E:\satisfactory-server-native\server`
+- Key files verified:
+  - `FactoryServer.exe` - Main server executable
+  - `FactoryGame\Binaries\Win64\` - Game binaries and DLLs
+  - `Engine\` - Unreal Engine files
+  - Manifest files for integrity verification
+
+**Server Configuration:**
+- Server script: `start-server.ps1`
+- Server name: `nokevins`
+- Game port: `7777`
+- Query port: `15000`
+- Beacon port: `15777`
+- Startup flags: `-log -unattended`
+
+**First Server Startup:**
+```powershell
+.\start-server.ps1
+```
+- Server launched successfully
+- Running in background process
+- Terminal ID: 26b18836-625f-4467-9673-cdc5cdfe821b
+
+**Log File Location:**
+- Path: `E:\satisfactory-server-native\server\FactoryGame\Saved\Logs\FactoryGame.log`
+
+**Log Monitoring Script Created:** `check-logs.ps1`
+```powershell
+# View last 50 lines
+.\check-logs.ps1
+
+# View last 100 lines
+.\check-logs.ps1 -Lines 100
+
+# Follow log in real-time
+.\check-logs.ps1 -Follow
+```
+
+**Server Status:**
+- Server initialized successfully
+- Map loaded: GameLevel01/Persistent_Level
+- Load time: 1.08 seconds
+- Connection attempts observed from IP: `192.168.4.48`
+- Navigation mesh building completed (navmesh warnings are normal)
+- Server is accepting connections on configured ports
+
+### [2025-12-19] Connection Timeout Issue - Same as Docker
+**Problem:**
+- Client stuck on "connecting to server" with spinning circle
+- Server logs show repeated "NotifyAcceptingConnection accepted" messages every 15-18 seconds
+- **No handshake completion** - no "LogNet: Join" or "LogNet: Login" messages appear
+- Connection aggregation keeps resetting, indicating timeout and retry cycle
+- **This is the EXACT same issue as with Docker** - first connect timeout
+
+**Analysis:**
+- Server accepts connection but handshake never completes
+- Client gives up and retries before server can finish initializing the connection
+- The native installation did NOT solve the underlying handshake timing problem
+
+**Fix Attempted:**
+Modified `Engine.ini` at `E:\satisfactory-server-native\server\FactoryGame\Saved\Config\WindowsServer\Engine.ini`
+
+Added timeout configuration to all network drivers:
+```ini
+[/Script/OnlineSubsystemUtils.IpNetDriver]
+InitialConnectTimeout=300.0
+ConnectionTimeout=300.0
+NetServerMaxTickRate=120
+
+[/Script/SteamSockets.SteamSocketsNetDriver]
+InitialConnectTimeout=300.0
+ConnectionTimeout=300.0
+
+[/Script/SocketSubsystemEOS.NetDriverEOSBase]
+InitialConnectTimeout=300.0
+ConnectionTimeout=300.0
+```
+
+**Configuration Changes:**
+- `InitialConnectTimeout=300.0` - Increased from default to 5 minutes for initial connection
+- `ConnectionTimeout=300.0` - General connection timeout extended
+- `NetServerMaxTickRate=120` - Ensure server processes connections quickly
+
+**Server Restart:**
+```powershell
+Get-Process -Name "FactoryServer" | Stop-Process -Force
+.\start-server.ps1
+```
+
+**RESULT: SUCCESS!**
+- Client connected successfully after timeout configuration changes
+- The increased `InitialConnectTimeout` and `ConnectionTimeout` settings resolved the handshake issue
+- Server now allows sufficient time for the initial connection handshake to complete
+
+**Root Cause Confirmed:**
+- Default Unreal Engine network timeouts are too short for Satisfactory's first connection
+- Server needs time to initialize the connection session before client times out
+- Both Docker and native installations had this issue - it's an engine configuration problem, not a Docker problem
+- Solution: Increase timeout values in Engine.ini to give handshake adequate time
+
+**Docker Issue - Additional Insight:**
+- The Docker container was likely **overriding** or **reverting** the `InitialConnectTimeout` value
+- Every time we changed the exact value in Docker's Engine.ini, it would revert back to default
+- Possible causes:
+  - Volume mount configuration overwriting the config file
+  - Container entrypoint script resetting configuration on startup
+  - Config file being regenerated from a template/default
+  - File permissions preventing persistent changes
+- **This is why Docker attempts failed** - not the timeout setting itself, but the inability to persist the change
+
+**Working Configuration:**
+- Server running natively on Windows
+- Timeout settings increased to 300 seconds (5 minutes)
+- Client can now successfully connect on first attempt
+- Configuration persists across server restarts (no override mechanism)
+
+---
+
+## Repository Setup for GitHub
+
+### [2025-12-19] Preparing Repository for Version Control
+**Repository**: https://github.com/theOranguzang/satisfactory-server-native
+
+**Files to Include:**
+- ✅ `start-server.ps1` - Server startup script
+- ✅ `check-logs.ps1` - Log monitoring utility
+- ✅ `migrate-config.ps1` - Docker-to-native migration tool
+- ✅ `README.md` - Sanitized documentation (passwords removed)
+- ✅ `chat-history` - Complete troubleshooting and setup log
+- ✅ `.gitignore` - Excludes server files, saves, logs
+- ✅ `Engine.ini.template` - Critical timeout configuration template
+
+**Files Excluded (via .gitignore):**
+- ❌ `server/` - Downloaded via SteamCMD (multi-GB)
+- ❌ `steamcmd/` - SteamCMD installation
+- ❌ `steamcmd.zip` - Installer
+- ❌ `*.sav` - Save game files
+- ❌ `*.log` - Log files
+- ❌ `ServerSettings.ini` - Contains sensitive configuration
+
+**Documentation Updates:**
+- README sanitized - removed server name, passwords, IP addresses
+- Added quick-start instructions
+- Emphasized the critical Engine.ini timeout fix
+- Linked to chat-history for complete technical details
+
+**Value of This Repository:**
+- Documents the connection timeout fix that works for Satisfactory servers
+- Provides working PowerShell management scripts
+- Explains why Docker approach failed (config override issue)
+- Complete troubleshooting journey preserved in chat-history
+
+---
+
