@@ -45,9 +45,10 @@ This step is **CRITICAL** - it contains the timeout settings that fix the connec
 
 ## Server Information
 
-- **Default Port**: 7777
-- **Query Port**: 15000  
-- **Beacon Port**: 15777
+- **Default Port**: 7777 (TCP/UDP)
+- **Query Port**: 15000 (UDP)
+- **Beacon Port**: 15777 (UDP)
+- **Messaging Port**: 8888 (TCP)
 
 Edit [start-server.ps1](start-server.ps1) to customize ports and settings.
 
@@ -60,14 +61,17 @@ Edit [start-server.ps1](start-server.ps1) to customize ports and settings.
 
 ## Firewall Configuration
 
-Open these ports in Windows Firewall:
+Open these ports in Windows Firewall (run in **Administrator PowerShell**):
 
 ```powershell
-New-NetFirewallRule -DisplayName "Satisfactory Server" -Direction Inbound -Port 7777 -Protocol TCP -Action Allow
-New-NetFirewallRule -DisplayName "Satisfactory Server" -Direction Inbound -Port 7777 -Protocol UDP -Action Allow
-New-NetFirewallRule -DisplayName "Satisfactory Query" -Direction Inbound -Port 15000 -Protocol UDP -Action Allow
-New-NetFirewallRule -DisplayName "Satisfactory Beacon" -Direction Inbound -Port 15777 -Protocol UDP -Action Allow
+New-NetFirewallRule -DisplayName "Satisfactory Server TCP" -Direction Inbound -LocalPort 7777 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Satisfactory Server UDP" -Direction Inbound -LocalPort 7777 -Protocol UDP -Action Allow
+New-NetFirewallRule -DisplayName "Satisfactory Query" -Direction Inbound -LocalPort 15000 -Protocol UDP -Action Allow
+New-NetFirewallRule -DisplayName "Satisfactory Beacon" -Direction Inbound -LocalPort 15777 -Protocol UDP -Action Allow
+New-NetFirewallRule -DisplayName "Satisfactory Messaging" -Direction Inbound -LocalPort 8888 -Protocol TCP -Action Allow
 ```
+
+**Note:** Port 8888 (messaging port) is required for the ReliableMessaging system used for game state synchronization.
 
 ## The Connection Timeout Fix
 

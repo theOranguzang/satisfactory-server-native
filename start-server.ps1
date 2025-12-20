@@ -10,6 +10,7 @@ $ServerParams = @(
     "-Port=7777",
     "-ServerQueryPort=15000",
     "-BeaconPort=15777",
+    "-multihome=0.0.0.0",
     "-log",
     "-unattended"
 )
