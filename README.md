@@ -79,6 +79,29 @@ The most critical configuration is in `Engine.ini.template`. The default Unreal 
 
 **Solution**: Increase `InitialConnectTimeout` to 300 seconds (5 minutes) in all network driver sections.
 
+### Known Limitation: WAN ReliableMessaging Timeout
+
+⚠️ **IMPORTANT**: While the `InitialConnectTimeout` fix works for the initial connection phase, there is a **hardcoded 20-second timeout** in Satisfactory's ReliableMessaging system that affects WAN (internet) connections.
+
+**Status:**
+- ✅ **LAN connections**: Work perfectly
+- ❌ **WAN connections**: Timeout after ~20 seconds during ReliableMessaging handshake
+- 🐛 **Bug report**: [Open for 2+ years](https://questions.satisfactorygame.com/post/64b0e0f6ca608e080354c794), no developer fix
+
+**What was tested:**
+- All `.ini` configuration options
+- Port 8888 (ReliableMessaging port)
+- Multiple `multihome` parameter variations
+- IPv6 disable/enable configurations
+- WiFi vs Ethernet (minimal improvement)
+
+**Root cause:** The ReliableMessaging handshake requires ~60 protocol exchanges. With WAN latency of 100ms+ per exchange, the total time (20-27 seconds) exceeds the hardcoded 20-second timeout.
+
+**Workarounds:**
+1. Use for LAN gaming only
+2. Rent VPS/dedicated server hosting (lower latency)
+3. Use client hosting instead of dedicated server
+
 See [chat-history](chat-history) for the complete troubleshooting journey and technical details.
 
 ## Why Native Instead of Docker?

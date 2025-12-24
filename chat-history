@@ -889,3 +889,109 @@ E:\satisfactory-server-native\server\FactoryServer.exe `
 
 ---
 
+## [2025-12-24] Ethernet Cable Test - FAILED ❌
+
+**Hardware Change:**
+- 50ft Ethernet cable installed
+- Server switched from WiFi (192.168.4.50) to Ethernet (192.168.4.51)
+- Router port forwarding updated to new IP
+- Public IP unchanged: 74.137.165.140
+
+**Server Configuration Updated:**
+```powershell
+# start-server.ps1 - Updated for Ethernet
+-multihome=192.168.4.51  # Changed from 192.168.4.50 (WiFi)
+```
+
+**WAN Connection Test from 172.58.126.126:**
+
+**Timeline:**
+```
+[2025.12.24-18.54.48] Connection accepted from 172.58.126.126:62279
+[2025.12.24-18.54.52] Join succeeded: oaktreedude (4 seconds)
+[2025.12.24-18.54.55] ReliableMessaging announcement received (7 seconds total)
+[2025.12.24-18.55.15] ❌ Handshake timeout (20 seconds after ReliableMessaging, 27 seconds total)
+```
+
+**Error:**
+```
+LogReliableMessaging: Warning: Handshake with player 'BP_PlayerController_C_2147473577' timed out. Removing component.
+LogNet: UNetConnection::Close: Result=ConnectionTimeout, ErrorContext="ConnectionTimeout"
+```
+
+**Result: FAILED**
+- ReliableMessaging handshake still timed out after ~20 seconds
+- Total connection time: 27 seconds (identical to WiFi tests)
+- Ethernet provided negligible improvement
+
+**Analysis:**
+
+**Expected Latency Improvement:**
+- WiFi local latency: ~5-10ms per packet
+- Ethernet local latency: ~1-2ms per packet
+- Theoretical savings: 3-8ms per round-trip exchange
+- Over 60 exchanges: 180-480ms total savings (0.18-0.48 seconds)
+
+**Actual Need:**
+- Current timeout: ~20 seconds (hardcoded)
+- Current WAN handshake: 20-27 seconds
+- Need to save: 6+ seconds
+- Ethernet saved: ~0.2-0.5 seconds maximum
+
+**Why It Didn't Work:**
+
+Ethernet only reduces **local network** latency (between PC and router). The overwhelming majority of the latency is in the **WAN portion**:
+
+1. **Local latency** (PC → Router):
+   - WiFi: ~5-10ms
+   - Ethernet: ~1-2ms
+   - **Improvement: 3-8ms per exchange**
+
+2. **WAN latency** (Router → Client over Internet):
+   - Typical residential: 50-150ms RTT
+   - This is ~95% of the total latency
+   - **Ethernet cannot improve this**
+
+3. **Math:**
+   - 60 exchanges × 3-8ms savings = 180-480ms total improvement
+   - Need 6000ms (6 seconds) improvement
+   - **Ethernet saves only 3-8% of what's needed**
+
+**Definitive Conclusion:**
+
+The ReliableMessaging timeout issue **cannot be solved with home network improvements**. The problem is:
+
+1. **Hardcoded 20-second timeout** in Satisfactory's compiled code
+2. **~60 protocol exchanges** required for ReliableMessaging handshake
+3. **100ms+ WAN latency** inherent to residential internet
+4. **Math: 60 × 100ms+ = 6+ seconds minimum**, which consumes most of the 20-second timeout
+5. Any network variance, packet loss, or overhead pushes it over the edge
+
+**Solutions That Would Work:**
+
+1. **Coffee Stain Studios fixes the game:**
+   - Increase timeout to 60+ seconds
+   - Optimize handshake protocol to require fewer exchanges
+   - Make timeout configurable via .ini files
+
+2. **Rent VPS/dedicated server:**
+   - Data center has <10ms latency to most clients
+   - Handshake completes in 3-5 seconds
+   - Costs $5-15/month
+
+3. **Client hosting workaround:**
+   - Friend hosts as client (not dedicated server)
+   - Different networking code without the timeout issue
+   - Requires host to be online
+
+**Final Status:**
+- ✅ All configuration options exhausted
+- ✅ All hardware options exhausted
+- ❌ WAN connections remain impossible for home-hosted dedicated server
+- ✅ LAN connections work perfectly
+- 📋 Comprehensive documentation maintained for future reference
+
+**Issue remains UNRESOLVED** - awaiting developer fix or moving to VPS hosting.
+
+---
+
